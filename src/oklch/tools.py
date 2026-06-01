@@ -116,28 +116,35 @@ def _max_saturation(a, b):
     k_m = -0.1055613458 * a - 0.0638541728 * b
     k_s = -0.0894841775 * a - 1.2914855480 * b
 
-    # while True:
-    l_ = 1. + S * k_l
-    m_ = 1. + S * k_m
-    s_ = 1. + S * k_s
+    # while True: 
 
-    l = l_ * l_ * l_
-    m = m_ * m_ * m_
-    s = s_ * s_ * s_
+    if not (-1.88170328 * a - 0.80936493 * b > 1) and \
+    not (1.81444104 * a - 1.19445276 * b > 1):
+        loop = 3 # blue case : two/three steps
+    else: loop = 1 # R&G : 1 step
 
-    l_dS = 3. * k_l * l_ * l_
-    m_dS = 3. * k_m * m_ * m_
-    s_dS = 3. * k_s * s_ * s_
+    for _ in range(loop):
+        l_ = 1. + S * k_l
+        m_ = 1. + S * k_m
+        s_ = 1. + S * k_s
 
-    l_dS2 = 6. * k_l * k_l * l_
-    m_dS2 = 6. * k_m * k_m * m_
-    s_dS2 = 6. * k_s * k_s * s_
+        l = l_ * l_ * l_
+        m = m_ * m_ * m_
+        s = s_ * s_ * s_
 
-    f  = wl * l     + wm * m     + ws * s
-    f1 = wl * l_dS  + wm * m_dS  + ws * s_dS
-    f2 = wl * l_dS2 + wm * m_dS2 + ws * s_dS2
+        l_dS = 3. * k_l * l_ * l_
+        m_dS = 3. * k_m * m_ * m_
+        s_dS = 3. * k_s * s_ * s_
 
-    S = S - f * f1 / (f1*f1 - 0.5 * f * f2)
+        l_dS2 = 6. * k_l * k_l * l_
+        m_dS2 = 6. * k_m * k_m * m_
+        s_dS2 = 6. * k_s * k_s * s_
+
+        f  = wl * l     + wm * m     + ws * s
+        f1 = wl * l_dS  + wm * m_dS  + ws * s_dS
+        f2 = wl * l_dS2 + wm * m_dS2 + ws * s_dS2
+
+        S = S - f * f1 / (f1*f1 - 0.5 * f * f2)
 
     return S
 
@@ -217,12 +224,13 @@ def _find_gamut_intersection(L1, C1,
     a, b = colors.OKLCH._get_normalized_ab(hue)
 
     # Find the cusp of the gamut triangle
-    if abs(hue - 264) >= 1:
-        cusp = find_cusp(hue=hue)
-    else:
-        # This handles a strange case with blues where it can converge
-        #   out-of-gamut, resulting in an infinite loop.
-        cusp = colors.HEX('#023BFB').to_OKLCH()
+    cusp = find_cusp(hue=hue)
+    # if abs(hue - 264) >= 1:
+    #     cusp = find_cusp(hue=hue)
+    # else:
+    #     # This handles a strange case with blues where it can converge
+    #     #   out-of-gamut, resulting in an infinite loop.
+    #     cusp = colors.HEX('#023BFB').to_OKLCH()
 
     # Manual method allows for an explicit L0 value. 
     if method == 'manual':
